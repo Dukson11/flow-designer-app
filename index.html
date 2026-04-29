@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Designer</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <span class="logo">⬡ Flow Designer</span>
+      <div class="header-actions">
+        <button id="btn-import" class="btn btn-ghost" title="Importovať JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+        </button>
+        <button id="btn-export" class="btn btn-ghost" title="Exportovať JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <input type="file" id="file-input" accept=".json" style="display:none" />
+      </div>
+    </header>
+
+    <!-- Main layout -->
+    <div id="main">
+      <!-- Left: Code panel -->
+      <aside id="code-panel">
+        <div class="panel-section">
+          <label class="panel-label">Mermaid kód</label>
+          <textarea
+            id="mermaid-input"
+            placeholder="flowchart TD
+    A[Štart] --> B{Rozhodnutie}
+    B -->|Áno| C[Akcia 1]
+    B -->|Nie| D[Akcia 2]
+    C --> E[Koniec]
+    D --> E"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="panel-actions">
+          <button id="btn-render" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Render
+          </button>
+          <button id="btn-fit" class="btn btn-ghost" title="Fit diagram">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            Fit
+          </button>
+        </div>
+        <div id="parse-error" class="error-box" style="display:none"></div>
+      </aside>
+
+      <!-- Center: Canvas -->
+      <main id="canvas-wrapper">
+        <div id="cy"></div>
+        <div id="canvas-hint">Vložte Mermaid kód a kliknite Render</div>
+      </main>
+
+      <!-- Right: Node panel -->
+      <aside id="node-panel" class="hidden">
+        <div class="panel-header">
+          <span class="panel-label">Vybraný node</span>
+          <button id="btn-close-panel" class="btn-icon" title="Zavrieť">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="node-meta">
+          <div class="meta-row">
+            <span class="meta-key">ID</span>
+            <code id="node-id">—</code>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">Label</span>
+            <span id="node-label">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">Typ</span>
+            <span id="node-shape">—</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <label class="panel-label">Komentár</label>
+          <textarea
+            id="node-comment"
+            placeholder="Poznámka k tomuto nodu pre Claude..."
+            rows="5"
+          ></textarea>
+        </div>
+
+        <button id="btn-copy-claude" class="btn btn-accent">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Kopírovať pre Claude
+        </button>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

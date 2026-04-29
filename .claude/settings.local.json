@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(gh auth *)",
+      "Bash(git config *)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(ssh -o StrictHostKeyChecking=no -T git@github.com)",
+      "Read(//Users/dusan.trizuliak/.ssh/**)"
+    ]
+  }
+}
