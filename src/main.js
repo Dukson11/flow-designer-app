@@ -3,7 +3,7 @@ import dagre from 'dagre'
 import cytoscapeDagre from 'cytoscape-dagre'
 import { parseMermaid } from './parser.js'
 import { formatForClaude, copyToClipboard } from './clipboard.js'
-import { generateMermaid, updateMermaid } from './api.js'
+import { generateMermaid, updateMermaid, updateNode as apiUpdateNode } from './api.js'
 
 cytoscapeDagre(cytoscape, dagre)
 
@@ -31,10 +31,16 @@ const parseError      = document.getElementById('parse-error')
 const canvasHint      = document.getElementById('canvas-hint')
 const nodePanel       = document.getElementById('node-panel')
 const btnClosePanel   = document.getElementById('btn-close-panel')
-const nodeIdEl        = document.getElementById('node-id')
-const nodeLabelEl     = document.getElementById('node-label')
-const nodeComment     = document.getElementById('node-comment')
-const btnCopyClaude   = document.getElementById('btn-copy-claude')
+const nodeIdEl          = document.getElementById('node-id')
+const nodeLabelInput    = document.getElementById('node-label-input')
+const btnApplyLabel     = document.getElementById('btn-apply-label')
+const nodeShapeSelect   = document.getElementById('node-shape-select')
+const btnDeleteNode     = document.getElementById('btn-delete-node')
+const nodeAiInput       = document.getElementById('node-ai-input')
+const btnNodeAiUpdate   = document.getElementById('btn-node-ai-update')
+const nodeAiLabel       = document.getElementById('node-ai-label')
+const nodeComment       = document.getElementById('node-comment')
+const btnCopyClaude     = document.getElementById('btn-copy-claude')
 const updateSection   = document.getElementById('update-section')
 const analysisPanel   = document.getElementById('analysis-panel')
 const analysisBody    = document.getElementById('analysis-body')
@@ -231,12 +237,43 @@ async function doUpdate() {
   setBusy(false)
 }
 
+// ── cytoscapeToMermaid ─────────────────────────────────────
+function cytoscapeToMermaid() {
+  const shapeOpen  = { box: '[', rounded: '(', diamond: '{', circle: '((', cylinder: '[(', stadium: '([' }
+  const shapeClose = { box: ']', rounded: ')', diamond: '}', circle: '))', cylinder: ')]', stadium: '])' }
+
+  const dir = detectDirection(currentMermaid) || 'TD'
+  let code = `flowchart ${dir}\n`
+
+  cy.nodes().forEach(n => {
+    const id    = n.id()
+    const label = n.data('label') || id
+    const shape = n.data('shape') || 'box'
+    const o = shapeOpen[shape]  || '['
+    const c = shapeClose[shape] || ']'
+    code += `    ${id}${o}${label}${c}\n`
+  })
+
+  cy.edges().forEach(e => {
+    const src   = e.data('source')
+    const tgt   = e.data('target')
+    const label = e.data('label')
+    code += label
+      ? `    ${src} -->|${label}| ${tgt}\n`
+      : `    ${src} --> ${tgt}\n`
+  })
+
+  return code
+}
+
 // ── Node panel ─────────────────────────────────────────────
 function selectNode(node) {
   selectedNodeId = node.id()
-  nodeIdEl.textContent = node.data('id')
-  nodeLabelEl.textContent = node.data('label')
-  nodeComment.value = comments.get(node.id()) || ''
+  nodeIdEl.textContent    = node.id()
+  nodeLabelInput.value    = node.data('label') || ''
+  nodeShapeSelect.value   = node.data('shape') || 'box'
+  nodeAiInput.value       = ''
+  nodeComment.value       = comments.get(node.id()) || ''
   nodePanel.classList.remove('hidden')
 }
 
@@ -244,6 +281,89 @@ function deselectNode() {
   selectedNodeId = null
   nodePanel.classList.add('hidden')
   cy?.elements().unselect()
+}
+
+// ── Manual: apply label ────────────────────────────────────
+function applyLabel() {
+  if (!selectedNodeId) return
+  const newLabel = nodeLabelInput.value.trim()
+  if (!newLabel) return
+  cy.$(`#${CSS.escape(selectedNodeId)}`).data('label', newLabel)
+  syncMermaid()
+  showToast('Label aktualizovaný', 'success')
+}
+
+btnApplyLabel.addEventListener('click', applyLabel)
+nodeLabelInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyLabel() }
+})
+
+// ── Manual: change shape ───────────────────────────────────
+nodeShapeSelect.addEventListener('change', () => {
+  if (!selectedNodeId) return
+  const shape = nodeShapeSelect.value
+  const node  = cy.$(`#${CSS.escape(selectedNodeId)}`)
+  node.data('shape', shape)
+  // re-apply shape style
+  const shapeMap = { box: 'roundrectangle', rounded: 'roundrectangle', diamond: 'diamond', circle: 'ellipse', cylinder: 'barrel' }
+  node.style('shape', shapeMap[shape] || 'roundrectangle')
+  if (shape === 'diamond') {
+    node.style({ 'background-color': '#2a1c0a', 'border-color': '#d4853a', padding: '18px' })
+  } else {
+    node.style({ 'background-color': '#1e293b', 'border-color': '#38bdf8', padding: '12px' })
+  }
+  syncMermaid()
+})
+
+// ── Manual: delete node ────────────────────────────────────
+btnDeleteNode.addEventListener('click', () => {
+  if (!selectedNodeId) return
+  cy.$(`#${CSS.escape(selectedNodeId)}`).remove()
+  deselectNode()
+  syncMermaid()
+  showToast('Node zmazaný', 'success')
+})
+
+// ── AI: update specific node ───────────────────────────────
+btnNodeAiUpdate.addEventListener('click', async () => {
+  if (!selectedNodeId || busy) return
+  const changeDesc = nodeAiInput.value.trim()
+  if (!changeDesc) return
+
+  const apiKey = getApiKey()
+  if (!apiKey) { openModal(); return }
+
+  const nodeLabel = cy.$(`#${CSS.escape(selectedNodeId)}`).data('label') || selectedNodeId
+
+  busy = true
+  btnNodeAiUpdate.disabled = true
+  nodeAiLabel.innerHTML = '<div class="spinner" style="border-color:rgba(148,163,184,.3);border-top-color:#94a3b8"></div> Upravujem...'
+  setStatus('loading', `Upravujem node "${nodeLabel}"...`)
+
+  try {
+    const result = await apiUpdateNode(currentMermaid, selectedNodeId, nodeLabel, changeDesc, apiKey)
+    currentMermaid = result.mermaid
+    mermaidInput.value = currentMermaid
+    render(currentMermaid)
+    nodeAiInput.value = ''
+    showAnalysis(result.analysis)
+    setStatus('ok', 'Node aktualizovaný')
+    showToast('Node aktualizovaný cez AI', 'success')
+  } catch (e) {
+    setStatus('err', e.message)
+    showToast(e.message, 'error')
+  }
+
+  busy = false
+  btnNodeAiUpdate.disabled = false
+  nodeAiLabel.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z"/></svg> Upraviť cez AI'
+})
+
+// ── Sync Cytoscape → Mermaid code ─────────────────────────
+function syncMermaid() {
+  const code = cytoscapeToMermaid()
+  currentMermaid = code
+  mermaidInput.value = code
 }
 
 nodeComment.addEventListener('input', () => {
@@ -255,7 +375,7 @@ btnCopyClaude.addEventListener('click', async () => {
   if (!selectedNodeId) return
   const node = cy.$(`#${CSS.escape(selectedNodeId)}`).first()
   const text = formatForClaude({
-    mermaidCode: mermaidInput.value,
+    mermaidCode: currentMermaid || mermaidInput.value,
     nodeId: selectedNodeId,
     nodeLabel: node.data('label') || selectedNodeId,
     comment: comments.get(selectedNodeId) || '',

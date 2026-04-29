@@ -47,6 +47,35 @@ export async function generateMermaid(description, apiKey) {
   return JSON.parse(clean)
 }
 
+export async function updateNode(currentMermaid, nodeId, nodeLabel, changeDesc, apiKey) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: `Existujúci Mermaid:\n\`\`\`\n${currentMermaid}\n\`\`\`\n\nZmeň iba node "${nodeId}" ("${nodeLabel}"): ${changeDesc}\n\nZachovaj všetky ostatné nody a prepojenia presne rovnaké.`,
+      }],
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || `HTTP ${res.status}`)
+  }
+  const data = await res.json()
+  const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('')
+  const clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
+  return JSON.parse(clean)
+}
+
 export async function updateMermaid(currentMermaid, comment, apiKey) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
