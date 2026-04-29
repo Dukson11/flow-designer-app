@@ -42,6 +42,8 @@ const CY_STYLE = [
       'text-halign': 'center',
       'font-size': '12px',
       'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+      'min-width': '80px',
+      'min-height': '36px',
       'padding': '12px',
       'text-wrap': 'wrap',
       'text-max-width': '160px',
@@ -161,16 +163,17 @@ function render() {
   cy.elements().remove()
   cy.add(elements)
 
-  cy.layout({
+  const layout = cy.layout({
     name: 'dagre',
     rankDir: detectDirection(mermaidInput.value),
-    nodeSep: 50,
-    rankSep: 70,
-    edgeSep: 20,
+    nodeSep: 60,
+    rankSep: 80,
     padding: 40,
-    animate: true,
-    animationDuration: 300,
-  }).run()
+    animate: false,
+    fit: true,
+  })
+  layout.run()
+  cy.fit(undefined, 40)
 
   canvasHint.classList.add('hidden')
   deselectNode()
