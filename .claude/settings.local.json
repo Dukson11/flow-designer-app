@@ -11,7 +11,9 @@
       "Bash(gh repo *)",
       "Bash(npx plugins *)",
       "Bash(node --input-type=module)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(claude mcp *)",
+      "Bash(node mcp-server.js --help)"
     ]
   }
 }

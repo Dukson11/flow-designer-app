@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "flow-designer": {
+      "command": "node",
+      "args": ["/Users/dusan.trizuliak/Documents/Flow Designer App/mcp-server.js"]
+    }
+  }
+}

@@ -359,11 +359,12 @@ btnNodeAiUpdate.addEventListener('click', async () => {
   nodeAiLabel.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z"/></svg> Upraviť cez AI'
 })
 
-// ── Sync Cytoscape → Mermaid code ─────────────────────────
+// ── Sync Cytoscape → Mermaid code + server ────────────────
 function syncMermaid() {
   const code = cytoscapeToMermaid()
   currentMermaid = code
   mermaidInput.value = code
+  syncToServer(code)
 }
 
 nodeComment.addEventListener('input', () => {
@@ -524,6 +525,7 @@ btnUpdate.addEventListener('click', doUpdate)
 btnRender.addEventListener('click', () => {
   currentMermaid = mermaidInput.value
   render(currentMermaid)
+  syncToServer(currentMermaid)
 })
 btnFit.addEventListener('click', () => cy?.fit(undefined, 40))
 btnClosePanel.addEventListener('click', deselectNode)
@@ -543,11 +545,60 @@ flowInput.addEventListener('keydown', (e) => {
   }
 })
 
+// ── MCP sync ───────────────────────────────────────────────
+let mcpUpdateInProgress = false
+
+function syncToServer(diagram) {
+  if (mcpUpdateInProgress) return
+  fetch('/api/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ diagram }),
+  }).catch(() => {})
+}
+
+function connectSSE() {
+  const indicator = document.getElementById('mcp-indicator')
+  const es = new EventSource('/api/events')
+
+  es.addEventListener('connected', (e) => {
+    indicator.classList.add('connected')
+    indicator.title = 'MCP: Flow Designer je pripojený'
+    // Sync server state to browser on connect
+    const data = JSON.parse(e.data)
+    if (data.diagram && !currentMermaid) {
+      currentMermaid = data.diagram
+      mermaidInput.value = data.diagram
+      render(data.diagram)
+    }
+  })
+
+  es.addEventListener('diagram', (e) => {
+    const { diagram, source } = JSON.parse(e.data)
+    if (source === 'mcp') {
+      mcpUpdateInProgress = true
+      currentMermaid = diagram
+      mermaidInput.value = diagram
+      render(diagram)
+      showToast('Diagram aktualizovaný cez MCP', 'success')
+      setTimeout(() => { mcpUpdateInProgress = false }, 200)
+    }
+  })
+
+  es.onerror = () => {
+    indicator.classList.remove('connected')
+    indicator.title = 'MCP: Nie je pripojený'
+    // Reconnect after 3s
+    es.close()
+    setTimeout(connectSSE, 3000)
+  }
+}
+
 // ── Boot ───────────────────────────────────────────────────
 initCy()
 updateApiKeyIndicator()
+connectSSE()
 
-// If no API key yet, show the modal hint
 if (!getApiKey()) {
   setStatus('', 'Nastav API kľúč pre AI generovanie')
 } else {
