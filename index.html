@@ -11,6 +11,8 @@
     <!-- Header -->
     <header id="header">
       <span class="logo">⬡ Flow Designer</span>
+      <span class="header-sub">· AI user flow</span>
+      <div class="spacer"></div>
       <div class="header-actions">
         <button id="btn-import" class="btn btn-ghost" title="Importovať JSON">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -20,43 +22,106 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="3"/></svg>
           Export
         </button>
+        <button id="btn-api-key" class="btn btn-ghost" title="Nastaviť API kľúč">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+          API Key
+        </button>
         <input type="file" id="file-input" accept=".json" style="display:none" />
       </div>
     </header>
 
     <!-- Main layout -->
     <div id="main">
-      <!-- Left: Code panel -->
+      <!-- Left: Input panel -->
       <aside id="code-panel">
-        <div class="panel-section">
-          <label class="panel-label">Mermaid kód</label>
-          <textarea
-            id="mermaid-input"
-            spellcheck="false"
-          >flowchart TD
+        <div class="panel-tabs">
+          <button class="panel-tab active" data-tab="ai">AI generovanie</button>
+          <button class="panel-tab" data-tab="mermaid">Mermaid kód</button>
+        </div>
+
+        <!-- AI tab -->
+        <div class="tab-content active" id="tab-ai">
+          <div class="panel-section">
+            <label class="panel-label">Popis flow</label>
+            <textarea id="flow-input" placeholder="Popíš screeny a prechody medzi nimi.
+
+Príklad:
+Screen: Login
+  - email a heslo
+  - tlačidlo Prihlásiť
+
+Screen: Dashboard
+  - zoznam projektov
+  - FAB: Nový projekt
+
+Screen: Nový projekt
+  - výber šablóny
+  - Vytvoriť" spellcheck="false"></textarea>
+          </div>
+
+          <div class="panel-actions">
+            <button id="btn-generate" class="btn btn-primary">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z"/></svg>
+              <span id="gen-label">Generovať diagram</span>
+            </button>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Update section (shown after first generation) -->
+          <div id="update-section" style="display:none">
+            <div class="panel-section">
+              <label class="panel-label">Úprava / komentár</label>
+              <textarea id="update-input" placeholder="Napr: doplň forgot password, pridaj loading stavy, zmeň poradie screénov..." rows="4" spellcheck="false"></textarea>
+            </div>
+            <button id="btn-update" class="btn btn-ghost" style="width:100%">
+              <span id="upd-label">↻ Aktualizovať</span>
+            </button>
+          </div>
+
+          <!-- Analysis panel -->
+          <div id="analysis-panel" style="display:none" class="analysis-box">
+            <div class="panel-label">Analýza AI</div>
+            <div id="analysis-body"></div>
+          </div>
+        </div>
+
+        <!-- Mermaid tab -->
+        <div class="tab-content" id="tab-mermaid">
+          <div class="panel-section" style="flex:1">
+            <label class="panel-label">Mermaid kód</label>
+            <textarea id="mermaid-input" spellcheck="false">flowchart TD
     A[Štart] --> B{Rozhodnutie}
     B -->|Áno| C[Akcia 1]
     B -->|Nie| D[Akcia 2]
     C --> E[Koniec]
     D --> E</textarea>
+          </div>
+          <div class="panel-actions">
+            <button id="btn-render" class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Render
+            </button>
+            <button id="btn-fit" class="btn btn-ghost" title="Fit diagram">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              Fit
+            </button>
+          </div>
         </div>
-        <div class="panel-actions">
-          <button id="btn-render" class="btn btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Render
-          </button>
-          <button id="btn-fit" class="btn btn-ghost" title="Fit diagram">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            Fit
-          </button>
-        </div>
+
         <div id="parse-error" class="error-box" style="display:none"></div>
+
+        <!-- Status bar -->
+        <div class="status-bar">
+          <div class="sdot" id="sdot"></div>
+          <span class="stxt" id="stxt">Pripravený</span>
+        </div>
       </aside>
 
       <!-- Center: Canvas -->
       <main id="canvas-wrapper">
         <div id="cy"></div>
-        <div id="canvas-hint">Vložte Mermaid kód a kliknite Render</div>
+        <div id="canvas-hint">Popíš flow a klikni Generovať diagram</div>
       </main>
 
       <!-- Right: Node panel -->
@@ -77,19 +142,11 @@
             <span class="meta-key">Label</span>
             <span id="node-label">—</span>
           </div>
-          <div class="meta-row">
-            <span class="meta-key">Typ</span>
-            <span id="node-shape">—</span>
-          </div>
         </div>
 
         <div class="panel-section">
           <label class="panel-label">Komentár</label>
-          <textarea
-            id="node-comment"
-            placeholder="Poznámka k tomuto nodu pre Claude..."
-            rows="5"
-          ></textarea>
+          <textarea id="node-comment" placeholder="Poznámka k tomuto nodu pre Claude..." rows="5"></textarea>
         </div>
 
         <button id="btn-copy-claude" class="btn btn-accent">
@@ -97,6 +154,24 @@
           Kopírovať pre Claude
         </button>
       </aside>
+    </div>
+  </div>
+
+  <!-- API Key modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Anthropic API kľúč</span>
+        <button id="modal-close" class="btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p class="modal-desc">Kľúč sa uloží iba v tvojom browseri (localStorage). Získaš ho na <strong>console.anthropic.com</strong> → API Keys.</p>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." class="api-key-field" />
+      <div class="modal-actions">
+        <button id="modal-save" class="btn btn-primary" style="flex:1">Uložiť</button>
+        <button id="modal-cancel" class="btn btn-ghost">Zrušiť</button>
+      </div>
     </div>
   </div>
 

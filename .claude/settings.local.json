@@ -6,7 +6,12 @@
       "Bash(git config *)",
       "Bash(ssh -T git@github.com)",
       "Bash(ssh -o StrictHostKeyChecking=no -T git@github.com)",
-      "Read(//Users/dusan.trizuliak/.ssh/**)"
+      "Read(//Users/dusan.trizuliak/.ssh/**)",
+      "Bash(git -C \"/Users/dusan.trizuliak/Documents/Flow Designer App\" branch -m master main)",
+      "Bash(gh repo *)",
+      "Bash(npx plugins *)",
+      "Bash(node --input-type=module)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
