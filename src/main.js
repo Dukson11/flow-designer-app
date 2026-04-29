@@ -111,7 +111,6 @@ function initCy() {
   cy = cytoscape({
     container: document.getElementById('cy'),
     style: CY_STYLE,
-    wheelSensitivity: 0.2,
     userZoomingEnabled: true,
     minZoom: 0.05,
     maxZoom: 4,
@@ -304,3 +303,4 @@ function showToast(msg, type = '') {
 
 // ── Boot ───────────────────────────────────────────────────
 initCy()
+render()

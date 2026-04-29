@@ -32,14 +32,13 @@
           <label class="panel-label">Mermaid kód</label>
           <textarea
             id="mermaid-input"
-            placeholder="flowchart TD
+            spellcheck="false"
+          >flowchart TD
     A[Štart] --> B{Rozhodnutie}
     B -->|Áno| C[Akcia 1]
     B -->|Nie| D[Akcia 2]
     C --> E[Koniec]
-    D --> E"
-            spellcheck="false"
-          ></textarea>
+    D --> E</textarea>
         </div>
         <div class="panel-actions">
           <button id="btn-render" class="btn btn-primary">
