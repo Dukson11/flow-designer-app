@@ -42,14 +42,10 @@ const CY_STYLE = [
       'text-halign': 'center',
       'font-size': '12px',
       'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-      'padding': '10px',
-      'width': 'label',
-      'height': 'label',
+      'padding': '12px',
       'text-wrap': 'wrap',
       'text-max-width': '160px',
       'shape': 'roundrectangle',
-      'transition-property': 'border-color, background-color',
-      'transition-duration': '0.15s',
     }
   },
   {
@@ -66,7 +62,7 @@ const CY_STYLE = [
   },
   {
     selector: 'node[shape = "stadium"]',
-    style: { shape: 'roundrectangle', 'border-radius': '50%' }
+    style: { shape: 'roundrectangle' }
   },
   {
     selector: 'node[shape = "cylinder"]',
@@ -115,7 +111,8 @@ function initCy() {
   cy = cytoscape({
     container: document.getElementById('cy'),
     style: CY_STYLE,
-    wheelSensitivity: 0.3,
+    wheelSensitivity: 0.2,
+    userZoomingEnabled: true,
     minZoom: 0.05,
     maxZoom: 4,
     elements: [],
